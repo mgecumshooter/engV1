@@ -1,18 +1,72 @@
 #include <iostream>
 #include <vector>
+#include <array>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
 
 using namespace std;
 
-static SDL_Window* window;
-static SDL_GPUDevice* device;
-
 struct Vertex{
   float x, y, z;
   float r, g, b, a;
 };
+
+void addTriangle(vector<Vertex>& verts, vector<uint16_t>& inds, array<float, 2> first, array<float, 2> second, array<float, 2> third) {
+  verts.push_back(Vertex{first[0], first[1], 0, 1, 1, 1, 1});
+  verts.push_back(Vertex{second[0], second[1], 0, 1, 1, 1, 1});
+  verts.push_back(Vertex{third[0], third[1], 0, 1, 1, 1, 1});
+
+  inds.push_back(static_cast<uint16_t>(verts.size() - 3));
+  inds.push_back(static_cast<uint16_t>(verts.size() - 2));
+  inds.push_back(static_cast<uint16_t>(verts.size() - 1));
+}
+
+void popTriangle(vector<Vertex>& verts, vector<uint16_t>& inds){
+  verts.pop_back();
+  verts.pop_back();
+  verts.pop_back();
+
+  inds.pop_back();
+  inds.pop_back();
+  inds.pop_back();
+}
+
+void addRect(vector<Vertex>& verts, vector<uint16_t>& inds, array<float, 2> first, array<float, 2> second) {
+  array<float, 2> upLeft = {first[0], first[1]};
+  array<float, 2> botLeft = {first[0], second[1]};
+  array<float, 2> upRight = {second[0], first[1]};
+  array<float, 2> botRight = {second[0], second[1]};
+
+  verts.push_back(Vertex{upLeft[0], upLeft[1], 0, 1, 1, 1, 1});
+  verts.push_back(Vertex{botLeft[0], botLeft[1], 0, 1, 1, 1, 1});
+  verts.push_back(Vertex{upRight[0], upRight[1], 0, 1, 1, 1, 1});
+  verts.push_back(Vertex{botRight[0], botRight[1], 0, 1, 1, 1, 1});
+
+  inds.push_back(verts.size() - 4);
+  inds.push_back(verts.size() - 3);
+  inds.push_back(verts.size() - 2);
+  inds.push_back(verts.size() - 3);
+  inds.push_back(verts.size() - 2);
+  inds.push_back(verts.size() - 1);
+}
+
+void popRect(vector<Vertex>& verts, vector<uint16_t>& inds){
+  verts.pop_back();
+  verts.pop_back();
+  verts.pop_back();
+  verts.pop_back();
+
+  inds.pop_back();
+  inds.pop_back();
+  inds.pop_back();
+  inds.pop_back();
+  inds.pop_back();
+  inds.pop_back();
+}
+
+static SDL_Window* window;
+static SDL_GPUDevice* device;
 
 int main(int argc, char **argv) {
 
@@ -149,6 +203,8 @@ int main(int argc, char **argv) {
   bool running = true;
   uint currentVertices = vertices.size();
   uint currentIndices = indices.size();
+
+  bool triangle = false;
   
   while (running) {
 
@@ -162,13 +218,17 @@ int main(int argc, char **argv) {
       case SDL_EVENT_KEY_DOWN:
 	switch (event.key.scancode){
 	case SDL_SCANCODE_Q:
-	  vertices.push_back({-1.f, 1.f, 0.f, 1.f, 1.f, 1.f, 1.f});
-	  vertices.push_back({-1.f, 0.5f, 0.f, 1.f, 1.f, 1.f, 1.f});
-	  vertices.push_back({-0.5f, 1.f, 0.f, 1.f, 1.f, 1.f, 1.f});
-
-	  indices.push_back(vertices.size() - 3);
-	  indices.push_back(vertices.size() - 2);
-	  indices.push_back(vertices.size() - 1);
+	  
+	  if (!triangle){
+	    addTriangle(vertices, indices, {-1.f, 1.f}, {-1.f, 0.5f}, {-0.5f, 1.f});
+	    addRect(vertices, indices, {0.5f, 1.f}, {1.f, 0.5f});
+	    triangle = true;
+	  }else {
+	    popTriangle(vertices, indices);
+	    popRect(vertices, indices);
+	    triangle = false;
+	  }
+	  
 	}
       }
     }
@@ -193,7 +253,6 @@ int main(int argc, char **argv) {
       currentVertices = vertices.size();
       currentIndices = indices.size();
 
-      cout << "painis" << endl;
     }
 
     
@@ -288,8 +347,4 @@ int main(int argc, char **argv) {
   SDL_ReleaseGPUGraphicsPipeline(device, graphicsPipeline);
   SDL_DestroyGPUDevice(device);
   SDL_DestroyWindow(window);
-}
-
-void addTriangle() {
-
 }
