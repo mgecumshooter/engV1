@@ -1,11 +1,67 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include <cmath>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
 
 using namespace std;
+
+struct Mat4{
+  array<float, 16> m = {
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1
+  };
+
+  static Mat4 translate(float x, float y, float z){
+    Mat4 result;
+    result.m[12] = x;
+    result.m[13] = y;
+    result.m[14] = z;
+    return result;
+  }
+
+  static Mat4 scale(float x, float y, float z){
+    Mat4 result;
+    result.m[0] = x;
+    result.m[5] = y;
+    result.m[10] = z;
+    return result;
+  }
+
+  static Mat4 rotateZ(float deg){
+    Mat4 result;
+    
+    float rads = deg * (M_PI / 180.f);
+    float c = cos(rads);
+    float s = sin(rads);
+
+    result.m[0] = c;
+    result.m[1] = s;
+    result.m[4] = -s;
+    result.m[5] = c;
+
+    return result;
+  }
+
+  Mat4 operator*(const Mat4& other) const{
+    Mat4 res;
+    for (int col = 0; col < 4; ++col){
+      for (int row = 0; row < 4; ++row){
+	float sum = 0;
+	for (int i = 0; i < 4; ++i){
+	  sum += this->m[i * 4 + row] * other.m[col * 4 + i];
+	}
+	res.m[col * 4 + row] = sum;
+      }
+    }
+    return res;
+  }
+  
+};
 
 struct Vertex{
   float x, y, z;
@@ -72,7 +128,7 @@ int main(int argc, char **argv) {
 
 
   SDL_Init(SDL_INIT_VIDEO);
-  window = SDL_CreateWindow("painis", 800, 600, SDL_WINDOW_BORDERLESS);
+  window = SDL_CreateWindow("painis", 800, 800, SDL_WINDOW_BORDERLESS);
   device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, NULL);
 
   SDL_ClaimWindowForGPUDevice(device, window);
@@ -129,7 +185,7 @@ int main(int argc, char **argv) {
   vertexShaderInfo.num_samplers = 0;
   vertexShaderInfo.num_storage_buffers = 0;
   vertexShaderInfo.num_storage_textures = 0;
-  vertexShaderInfo.num_uniform_buffers = 0;
+  vertexShaderInfo.num_uniform_buffers = 1;
 
   SDL_GPUShader* vertexShader = SDL_CreateGPUShader(device, &vertexShaderInfo);
 
@@ -205,6 +261,8 @@ int main(int argc, char **argv) {
   uint currentIndices = indices.size();
 
   bool triangle = false;
+
+  int rotation = 0;
   
   while (running) {
 
@@ -332,6 +390,10 @@ int main(int argc, char **argv) {
 
     SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
 
+    Mat4 matrix = Mat4::translate(0.5f, 0.f, 0.f) * Mat4::rotateZ(rotation) * Mat4::scale(0.5f, 0.5f, 0.5f);
+
+    SDL_PushGPUVertexUniformData(commandBuffer, 0, &matrix, sizeof(Mat4));
+
     // SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
     SDL_DrawGPUIndexedPrimitives(renderPass, indices.size(), 1, 0, 0, 0);
 
@@ -339,6 +401,8 @@ int main(int argc, char **argv) {
     SDL_EndGPURenderPass(renderPass);
 
     SDL_SubmitGPUCommandBuffer(commandBuffer);
+
+    rotation++;
   }
 
   SDL_ReleaseGPUBuffer(device, indexBuffer);
