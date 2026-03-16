@@ -47,6 +47,21 @@ struct Mat4{
     return result;
   }
 
+  static Mat4 ortho(float left, float right, float bottom, float top, float znear, float zfar){
+    Mat4 result;
+
+    result.m[0] = 2.f / (right - left);
+    result.m[5] = 2.f / (top - bottom);
+    result.m[10] = 1.f / (zfar - znear);
+
+    result.m[12] = -(right + left) / (right - left);
+    result.m[13] = -(top + bottom) / (top - bottom);
+    result.m[14] = -znear / (zfar - znear);
+    result.m[15] = 1.f;
+
+    return result;
+  }
+
   Mat4 operator*(const Mat4& other) const{
     Mat4 res;
     for (int col = 0; col < 4; ++col){
@@ -126,9 +141,14 @@ static SDL_GPUDevice* device;
 
 int main(int argc, char **argv) {
 
+  int wHeight = 600;
+  int wWidth = 800;
+
+  Mat4 projection = Mat4::ortho(0, wWidth, wHeight, 0, -1, 1);
+
 
   SDL_Init(SDL_INIT_VIDEO);
-  window = SDL_CreateWindow("painis", 800, 800, SDL_WINDOW_BORDERLESS);
+  window = SDL_CreateWindow("painis", wWidth, wHeight, SDL_WINDOW_RESIZABLE);
   device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, NULL);
 
   SDL_ClaimWindowForGPUDevice(device, window);
@@ -141,12 +161,14 @@ int main(int argc, char **argv) {
   // };
 
   vector<Vertex> vertices = {
-    {0.f, 0.5f, 0.f, 1.f, 0.f, 0.f, 1.f},
-    {-0.5f, -0.5f, 0.f, 0.f, 1.f, 0.f, 1.f},
-    {0.5f, -0.5f, 0.f, 0.f, 0.f, 1.f, 1.f}
+    {0.f, -150.f, 0.f, 1.f, 0.f, 0.f, 1.f},
+    {-150.f, 150.f, 0.f, 0.f, 1.f, 0.f, 1.f},
+    {150.f, 150.f, 0.f, 0.f, 0.f, 1.f, 1.f}
   };
 
+
   vector<uint16_t> indices = {0, 1, 2};
+
 
 
   SDL_GPUBufferCreateInfo vertexInfo{};
@@ -273,21 +295,27 @@ int main(int argc, char **argv) {
       case SDL_EVENT_QUIT:
 	running = false;
 	break;
+
       case SDL_EVENT_KEY_DOWN:
-	switch (event.key.scancode){
-	case SDL_SCANCODE_Q:
-	  
-	  if (!triangle){
-	    addTriangle(vertices, indices, {-1.f, 1.f}, {-1.f, 0.5f}, {-0.5f, 1.f});
-	    addRect(vertices, indices, {0.5f, 1.f}, {1.f, 0.5f});
+	if (event.key.scancode == SDL_SCANCODE_Q) {
+	  if (!triangle) {
+	    addTriangle(vertices, indices, {-50.f, -50.f}, {-50.f, 50.f}, {50.f, -50.f});
+	    addRect(vertices, indices, {-60.f, 60.f}, {60.f, -60.f});
 	    triangle = true;
-	  }else {
+	  } else {
 	    popTriangle(vertices, indices);
 	    popRect(vertices, indices);
 	    triangle = false;
 	  }
-	  
 	}
+	break; // Обязательно выходим из KEY_DOWN
+
+      case SDL_EVENT_WINDOW_RESIZED: // Теперь это на своем месте
+	wWidth = event.window.data1;
+	wHeight = event.window.data2;
+	// ОБНОВЛЯЕМ существующую переменную, а не создаем новую!
+	projection = Mat4::ortho(0, (float)wWidth, (float)wHeight, 0, -1.f, 1.f);
+	break;
       }
     }
     
@@ -390,20 +418,40 @@ int main(int argc, char **argv) {
 
     SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
 
-    Mat4 matrix = Mat4::translate(0.5f, 0.f, 0.f) * Mat4::rotateZ(rotation) * Mat4::scale(0.5f, 0.5f, 0.5f);
-
-    SDL_PushGPUVertexUniformData(commandBuffer, 0, &matrix, sizeof(Mat4));
+    Mat4 matrix = Mat4::translate(wWidth / 2.f, wHeight / 2.f, 0.f);
+    Mat4 finalMPV = projection * matrix;
+    SDL_PushGPUVertexUniformData(commandBuffer, 0, &finalMPV, sizeof(Mat4));
 
     // SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
-    SDL_DrawGPUIndexedPrimitives(renderPass, indices.size(), 1, 0, 0, 0);
+    SDL_DrawGPUIndexedPrimitives(renderPass, 3, 1, 0, 0, 0);
 
+    if (vertices.size() > 3 && indices.size() > 3){
+      matrix = Mat4::translate(wWidth * 0.75f, wHeight * 0.25f, 0.f) * Mat4::rotateZ(rotation);
+      finalMPV = projection * matrix;
+      SDL_PushGPUVertexUniformData(commandBuffer, 0, &finalMPV, sizeof(Mat4));
+
+      SDL_DrawGPUIndexedPrimitives(renderPass, 6, 1, indices.size() - 6, 0, 0);
+
+      // NORMALIZING MATRIX
+      // matrix = Mat4::translate(0.f, 0.f, 0.f) * Mat4::rotateZ(-rotation) * Mat4::scale(2.f, 2.f, 2.f);
+      matrix = Mat4::translate(wWidth * 0.25f, wHeight * 0.25f, 0.f) * Mat4::scale(fabs(sin(rotation * (M_PI / 180))) + 0.5f, fabs(sin(rotation * (M_PI / 180))) + 0.5f, 1);
+      finalMPV = projection * matrix;
+      SDL_PushGPUVertexUniformData(commandBuffer, 0, &finalMPV, sizeof(Mat4));
+
+      SDL_DrawGPUIndexedPrimitives(renderPass, 3, 1, indices.size() - 6 - 3, 0, 0);
+    }
+
+    
+    
     // END OF RENDER PASS
     SDL_EndGPURenderPass(renderPass);
 
     SDL_SubmitGPUCommandBuffer(commandBuffer);
 
     rotation++;
+
   }
+
 
   SDL_ReleaseGPUBuffer(device, indexBuffer);
   SDL_ReleaseGPUBuffer(device, vertexBuffer);
