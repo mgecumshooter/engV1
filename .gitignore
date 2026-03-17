@@ -1,3 +1,7 @@
+.xmake
+.ccls-cache
+.ccls*
+
 # Prerequisites
 *.d
 
