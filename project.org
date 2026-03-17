@@ -1,10 +1,18 @@
 * Flappy-bird
-** I Engine
+** D Engine
+CLOSED: [2026-03-17 Tue 13:08]
 *** D basics
 CLOSED: [2026-03-14 Sat 21:04]
 *** D dynamic buffers
 CLOSED: [2026-03-14 Sat 22:44]
 *** D matrixes
 CLOSED: [2026-03-16 Mon 09:58]
-*** T separated
+*** D separated
+CLOSED: [2026-03-17 Tue 13:08]
 ** T Game
+*** meshes
+*** physics
+*** infinite pipes
+*** collisions
+*** score
+*** (?)essentials
