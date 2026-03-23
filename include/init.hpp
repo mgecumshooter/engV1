@@ -1,26 +1,27 @@
 #pragma once
-
 #include <vector>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
+#include "basicRender.hpp"
+#include "matrix.hpp"
 
-using namespace std;
-using namespace basicRend;
 
 int wHeight = 600;
 int wWidth = 800;
 
 Mat4 projection = Mat4::ortho(0, wWidth, wHeight, 0, -1, 1);
 
+static SDL_Window* window;
+static SDL_GPUDevice* device;
 
-vector<Vertex> vertices = {
+std::vector<Vertex> vertices = {
   {0.f, -150.f, 0.f, 1.f, 0.f, 0.f, 1.f},
   {-150.f, 150.f, 0.f, 0.f, 1.f, 0.f, 1.f},
   {150.f, 150.f, 0.f, 0.f, 0.f, 1.f, 1.f}
 };
 
-vector<uint16_t> indices = {0, 1, 2};
+std::vector<uint16_t> indices = {0, 1, 2};
 
 SDL_GPUBufferCreateInfo vertexInfo{};
 SDL_GPUBufferCreateInfo indexInfo{};

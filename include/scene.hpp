@@ -1,0 +1,35 @@
+#pragma once
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include "sprite.hpp"
+#include "vertex.hpp"
+
+
+class Scene {
+public:
+  std::vector<std::unique_ptr<Sprite>> sprites;
+
+    // Создать объект и вернуть указатель на него (чтобы менять координаты)
+    Sprite* spawn(float x, float y, float w, float h) {
+      auto s = std::make_unique<Sprite>();
+        s->x = x; s->y = y; s->w = w; s->h = h;
+        sprites.push_back(std::move(s));
+        return sprites.back().get();
+    }
+
+    // Очистка мертвых объектов
+    void cleanup() {
+      sprites.erase(std::remove_if(sprites.begin(), sprites.end(), 
+            [](const auto& s) { return s->pending_destruction; }), sprites.end());
+    }
+
+    // Собираем все вершины в кучу для GPU
+  void updateGlobalBuffers(std::vector<Vertex>& v, std::vector<uint16_t>& i) {
+        v.clear();
+        i.clear();
+        for (const auto& s : sprites) {
+            s->pushData(v, i);
+        }
+    }
+};

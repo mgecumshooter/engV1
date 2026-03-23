@@ -1,12 +1,10 @@
 #pragma once
-
 #include <array>
 #include <cmath>
 
-using namespace std;
 
 struct Mat4{
-  array<float, 16> m = {
+  std::array<float, 16> m = {
     1, 0, 0, 0,
     0, 1, 0, 0,
     0, 0, 1, 0,
