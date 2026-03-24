@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
 	
       case SDL_EVENT_KEY_DOWN:
-	if (event.key.scancode == SDL_SCANCODE_Q) {
+	if (event.key.scancode == SDL_SCANCODE_SPACE) {
 	  painis->velocity[1] = -5.f;
 	  
 	}else if (event.key.scancode == SDL_SCANCODE_E){
@@ -109,12 +109,12 @@ int main(int argc, char **argv) {
     if (painis->velocity[1] < 20.f) {
       painis->velocity[1] += 0.2f;
     }
-    if (painis->y >= wHeight){
-      running = false;
-    }
-    if (painis->y <= -painis->h){
-      running = false;
-    }
+    // if (painis->y >= wHeight){
+    //   running = false;
+    // }
+    // if (painis->y <= -painis->h){
+    //   running = false;
+    // }
 
     for (auto& pair: pipes){
       Sprite* top = pair.first;
@@ -134,12 +134,31 @@ int main(int argc, char **argv) {
 	top->x = maxX + pipeGapX;
 	bot->x = top->x;
 
-	top->y = -(wHeight * 0.25f + fmod(rand(), wHeight * 0.5f));
+	top->y = -(wHeight * 0.25f + fmod(rand(), wHeight * 0.7f));
 	bot->y = top->y + top->h + pipeGapY;
       }
 
-      if (collision(painis, top) || collision(painis, bot)){
-	running = false;
+      if ((collision(painis, top) || collision(painis, bot)) || (painis->y >= wHeight || painis->y <= -painis->h)){
+	// running = false;
+
+	painis->y = wHeight / 2 - painis->h;
+	painis->velocity[1] = 0;
+
+	int i = 0;
+        for (auto& pp : pipes){
+	  i++;
+	  float startX = wWidth + (i * pipeGapX);
+
+	  Sprite* Ptop = pp.first;
+	  Sprite* Pbot = pp.second;
+
+	  Ptop->x = startX;
+	  Pbot->x = Ptop->x;
+
+	  Ptop->y = -(wHeight * 0.25f + fmod(rand(), wHeight * 0.75f));
+	  Pbot->y = Ptop->y + Ptop->h + pipeGapY;
+	  
+	}
       }
     }
     // if (collision(painis, rect)){
