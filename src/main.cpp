@@ -57,10 +57,10 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  initSound("resources/sounds/music2.wav", &sounds[0]);
+  initSound("resources/sounds/music1.wav", &sounds[0]);
   initSound("resources/sounds/jump.wav", &sounds[1]);
   initSound("resources/sounds/coin3.wav", &sounds[2]);
-  initSound("resources/sounds/hurt1.wav", &sounds[3]);
+  initSound("resources/sounds/hurt2.wav", &sounds[3]);
 
   Scene scene;
   Sprite* painis = scene.spawn(150.f, 150.f, 45.f, 45.f);
@@ -111,14 +111,14 @@ int main(int argc, char **argv) {
 	  painis->velocity[1] = -5.f;
 	  SDL_PutAudioStreamData(sounds[1].stream, sounds[1].wavData, (int)sounds[1].wavDataLen);
 	  
-	}else if (event.key.scancode == SDL_SCANCODE_E){
-	  vertices.clear();
-	  indices.clear();
 	}
 	
 	break; // Обязательно выходим из KEY_DOWN
 
-	
+      case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	painis->velocity[1] = -5.f;
+	SDL_PutAudioStreamData(sounds[1].stream, sounds[1].wavData, (int)sounds[1].wavDataLen);
+	break;
       case SDL_EVENT_WINDOW_RESIZED: // Теперь это на своем месте
 	wWidth = event.window.data1;
 	wHeight = event.window.data2;
@@ -332,12 +332,24 @@ int main(int argc, char **argv) {
 
     SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
 
-    Mat4 matrix = Mat4::translate(0.f, 0.f, 0.f);
+    float cx = painis->x + painis->w / 2;
+    float cy = painis->y + painis->h / 2;
+
+    float angle = painis->velocity[1] * 3.f;
+    
+    Mat4 matrix = Mat4::translate(cx, cy, 0.f) * Mat4::rotateZ(angle) * Mat4::translate(-cx, -cy, 0.f);
     Mat4 finalMPV = projection * matrix;
     SDL_PushGPUVertexUniformData(commandBuffer, 0, &finalMPV, sizeof(Mat4));
 
     // SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
-    SDL_DrawGPUIndexedPrimitives(renderPass, indices.size(), 1, 0, 0, 0);
+    SDL_DrawGPUIndexedPrimitives(renderPass, 6, 1, 0, 0, 0);
+
+    matrix = Mat4::translate(0.f, 0.f, 0.f);
+    finalMPV = projection * matrix;
+    SDL_PushGPUVertexUniformData(commandBuffer, 0, &finalMPV, sizeof(Mat4));
+
+    SDL_DrawGPUIndexedPrimitives(renderPass, indices.size() - 6, 1, 6, 0, 0);
+
     
     
     // END OF RENDER PASS
