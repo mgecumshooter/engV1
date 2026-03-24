@@ -19,6 +19,25 @@
 using namespace std;
 using namespace basicRend;
 
+static SDL_AudioDeviceID audioDevice = 0;
+
+typedef struct Sound {
+  Uint8* wavData;
+  Uint32 wavDataLen;
+  SDL_AudioStream* stream;
+} Sound;
+
+static Sound sounds[4];
+
+static void initSound(const char* file, Sound* sound){
+  SDL_AudioSpec spec;
+
+  SDL_LoadWAV(file, &spec, &sound->wavData, &sound->wavDataLen);
+
+  sound->stream = SDL_CreateAudioStream(&spec, NULL);
+  SDL_BindAudioStream(audioDevice, sound->stream);
+}
+
 bool collision(Sprite* player, Sprite* body){
   bool overlapX = (player->x < body->x + body->w) && (player->x + player->w > body->x);
   bool overlapY = (player->y < body->y + body->h) && (player->y + player->h > body->y);
@@ -27,9 +46,21 @@ bool collision(Sprite* player, Sprite* body){
 }
 
 
+
 int main(int argc, char **argv) {
 
   init();
+
+  audioDevice = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
+  if (audioDevice == 0){
+    cerr << "AUDIO DEVICE PROBLEM" << endl;
+    exit(1);
+  }
+
+  initSound("resources/sounds/music2.wav", &sounds[0]);
+  initSound("resources/sounds/jump.wav", &sounds[1]);
+  initSound("resources/sounds/coin3.wav", &sounds[2]);
+  initSound("resources/sounds/hurt1.wav", &sounds[3]);
 
   Scene scene;
   Sprite* painis = scene.spawn(150.f, 150.f, 45.f, 45.f);
@@ -78,6 +109,7 @@ int main(int argc, char **argv) {
       case SDL_EVENT_KEY_DOWN:
 	if (event.key.scancode == SDL_SCANCODE_SPACE) {
 	  painis->velocity[1] = -5.f;
+	  SDL_PutAudioStreamData(sounds[1].stream, sounds[1].wavData, (int)sounds[1].wavDataLen);
 	  
 	}else if (event.key.scancode == SDL_SCANCODE_E){
 	  vertices.clear();
@@ -97,6 +129,10 @@ int main(int argc, char **argv) {
 
 	
       }
+    }
+
+    if (SDL_GetAudioStreamQueued(sounds[0].stream) < (int)sounds[0].wavDataLen){
+      SDL_PutAudioStreamData(sounds[0].stream, sounds[0].wavData, (int)sounds[0].wavDataLen);
     }
 
     // rect->x -= 2.f;
@@ -124,6 +160,8 @@ int main(int argc, char **argv) {
       bot->x -= 3.f;
 
       if (top->x <= -top->w){
+	top->counted = false;
+	
 	float maxX = 0;
 	for (const auto& p: pipes){
 	  if (p.first->x > maxX){
@@ -138,9 +176,16 @@ int main(int argc, char **argv) {
 	bot->y = top->y + top->h + pipeGapY;
       }
 
+      if ((painis->x > top->x + top->w) && !top->counted){
+	top->counted = true;
+	SDL_PutAudioStreamData(sounds[2].stream, sounds[2].wavData, (int)sounds[2].wavDataLen);
+      }
+
       if ((collision(painis, top) || collision(painis, bot)) || (painis->y >= wHeight || painis->y <= -painis->h)){
 	// running = false;
 
+	SDL_PutAudioStreamData(sounds[3].stream, sounds[3].wavData, (int)sounds[3].wavDataLen);
+	
 	painis->y = wHeight / 2 - painis->h;
 	painis->velocity[1] = 0;
 

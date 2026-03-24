@@ -10,6 +10,7 @@ struct Sprite {
   std::array<float, 2> velocity = {0.f, 0.f};
   SDL_FColor color {1.0f, 1.0f, 1.0f, 1.0f}; // Белый по дефолту
   bool pending_destruction = false;
+  bool counted = false;
 
   // Метод, который говорит объекту: "Нарисуй себя в эти векторы"
   void pushData(std::vector<Vertex>& v, std::vector<uint16_t>& i) const {

@@ -34,7 +34,7 @@ SDL_GPUTransferBuffer* transferBuffer;
 SDL_GPUGraphicsPipeline* graphicsPipeline;
 
 void init(){
-  SDL_Init(SDL_INIT_VIDEO);
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
   window = SDL_CreateWindow("painis", wWidth, wHeight, SDL_WINDOW_VULKAN);
   device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, NULL);
