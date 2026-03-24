@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
   uint currentIndices = indices.size();
 
   bool triangle = false;
+  int score = 0;
   
   while (running) {
 
@@ -178,6 +179,8 @@ int main(int argc, char **argv) {
 
       if ((painis->x > top->x + top->w) && !top->counted){
 	top->counted = true;
+	score++;
+	SDL_SetWindowTitle(window, to_string(score).c_str());
 	SDL_PutAudioStreamData(sounds[2].stream, sounds[2].wavData, (int)sounds[2].wavDataLen);
       }
 
