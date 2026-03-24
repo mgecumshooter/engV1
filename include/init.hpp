@@ -98,6 +98,7 @@ void init(){
 
   pipelineInfo.vertex_shader = vertexShader;
   pipelineInfo.fragment_shader = fragmentShader;
+  pipelineInfo.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
 
   pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
@@ -137,5 +138,11 @@ void init(){
 
   SDL_ReleaseGPUShader(device, vertexShader);
   SDL_ReleaseGPUShader(device, fragmentShader);
+
+  if (graphicsPipeline == nullptr || graphicsPipeline == NULL){
+    std::cerr << "PIPELINE CRASH" << std::endl;
+    std::cerr << "reason: " << SDL_GetError() << std::endl;
+    exit(1);
+  }
   
 }
