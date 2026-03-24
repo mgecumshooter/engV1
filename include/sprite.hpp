@@ -1,26 +1,28 @@
 #pragma once
 #include <vector>
+#include <array>
 #include <SDL3/SDL.h>
 #include "vertex.hpp"
 
 
 struct Sprite {
-    float x, y, w, h;
-    SDL_FColor color {1.0f, 1.0f, 1.0f, 1.0f}; // Белый по дефолту
-    bool pending_destruction = false;
+  float x, y, w, h;
+  std::array<float, 2> velocity = {0.f, 0.f};
+  SDL_FColor color {1.0f, 1.0f, 1.0f, 1.0f}; // Белый по дефолту
+  bool pending_destruction = false;
 
-    // Метод, который говорит объекту: "Нарисуй себя в эти векторы"
+  // Метод, который говорит объекту: "Нарисуй себя в эти векторы"
   void pushData(std::vector<Vertex>& v, std::vector<uint16_t>& i) const {
-        uint16_t baseIdx = (uint16_t)v.size();
+    uint16_t baseIdx = (uint16_t)v.size();
 
-        // Добавляем 4 вершины (твоя логика из Object)
-        v.push_back({x, y, 0, color.r, color.g, color.b, color.a});         // top-left
-        v.push_back({x, y + h, 0, color.r, color.g, color.b, color.a});     // bot-left
-        v.push_back({x + w, y, 0, color.r, color.g, color.b, color.a});     // top-right
-        v.push_back({x + w, y + h, 0, color.r, color.g, color.b, color.a}); // bot-right
+    // Добавляем 4 вершины (твоя логика из Object)
+    v.push_back({x, y, 0, color.r, color.g, color.b, color.a});         // top-left
+    v.push_back({x, y + h, 0, color.r, color.g, color.b, color.a});     // bot-left
+    v.push_back({x + w, y, 0, color.r, color.g, color.b, color.a});     // top-right
+    v.push_back({x + w, y + h, 0, color.r, color.g, color.b, color.a}); // bot-right
 
-        // Добавляем 6 индексов (2 треугольника)
-        i.push_back(baseIdx + 0); i.push_back(baseIdx + 1); i.push_back(baseIdx + 2);
-        i.push_back(baseIdx + 2); i.push_back(baseIdx + 1); i.push_back(baseIdx + 3);
-    }
+    // Добавляем 6 индексов (2 треугольника)
+    i.push_back(baseIdx + 0); i.push_back(baseIdx + 1); i.push_back(baseIdx + 2);
+    i.push_back(baseIdx + 2); i.push_back(baseIdx + 1); i.push_back(baseIdx + 3);
+  }
 };

@@ -30,6 +30,8 @@ public:
         i.clear();
         for (const auto& s : sprites) {
             s->pushData(v, i);
+	    s->x += s->velocity[0];
+	    s->y += s->velocity[1];
         }
     }
 };

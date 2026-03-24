@@ -19,21 +19,48 @@
 using namespace std;
 using namespace basicRend;
 
+bool collision(Sprite* player, Sprite* body){
+  bool overlapX = (player->x < body->x + body->w) && (player->x + player->w > body->x);
+  bool overlapY = (player->y < body->y + body->h) && (player->y + player->h > body->y);
+
+  return overlapX && overlapY;
+}
+
 
 int main(int argc, char **argv) {
 
   init();
 
   Scene scene;
-  Sprite* rect = nullptr;
+  Sprite* painis = scene.spawn(150.f, 150.f, 45.f, 45.f);
+  // Sprite* rect = scene.spawn(wWidth, wHeight / 2.f, 45.f, wHeight);
+  // Sprite* rect2 = scene.spawn(wWidth, wHeight / 2.f, 45.f, wHeight);
+
+  const float pipeWidth = 45.f;
+  const float pipeGapY = painis->h * 3;
+  const float pipeGapX = painis->w * 5;
+
+  int pipePairsCount = (wWidth / pipeGapX) + 2;
+
+  vector<pair<Sprite*, Sprite*>> pipes;
+
+  for (int i = 0; i < pipePairsCount; ++i){
+    float startX = wWidth + (i * pipeGapX);
+
+    Sprite* top = scene.spawn(startX, 0, pipeWidth, wHeight);
+    Sprite* bot = scene.spawn(startX, 0, pipeWidth, wHeight);
+
+    top->y = -(wHeight * 0.25f + fmod(rand(), wHeight * 0.5f));
+    bot->y = top->y + top->h + pipeGapY;
+
+    pipes.push_back({top, bot});
+  }
   
   bool running = true;
   uint currentVertices = vertices.size();
   uint currentIndices = indices.size();
 
   bool triangle = false;
-
-  int rotation = 0;
   
   while (running) {
 
@@ -50,13 +77,7 @@ int main(int argc, char **argv) {
 	
       case SDL_EVENT_KEY_DOWN:
 	if (event.key.scancode == SDL_SCANCODE_Q) {
-	  
-	  if (!rect){
-	    rect = scene.spawn(-50.f, -50.f, 100.f, 100.f);
-	  }else {
-	    rect->pending_destruction = true;
-	    rect = nullptr;
-	  }
+	  painis->velocity[1] = -5.f;
 	  
 	}else if (event.key.scancode == SDL_SCANCODE_E){
 	  vertices.clear();
@@ -69,6 +90,7 @@ int main(int argc, char **argv) {
       case SDL_EVENT_WINDOW_RESIZED: // Теперь это на своем месте
 	wWidth = event.window.data1;
 	wHeight = event.window.data2;
+	// rect->w = wHeight;
 	// ОБНОВЛЯЕМ существующую переменную, а не создаем новую!
 	projection = Mat4::ortho(0, (float)wWidth, (float)wHeight, 0, -1.f, 1.f);
 	break;
@@ -77,6 +99,57 @@ int main(int argc, char **argv) {
       }
     }
 
+    // rect->x -= 2.f;
+    // rect2->y = rect->y - rect->h - painis->h * 3;
+    // rect2->x = rect->x;
+    // if (rect->x <= -rect->w){
+    //   rect->x = wWidth;
+    //   rect->y = wHeight * 0.25f + fmod(rand(), wHeight * 0.5f);
+    // }
+    if (painis->velocity[1] < 20.f) {
+      painis->velocity[1] += 0.2f;
+    }
+    if (painis->y >= wHeight){
+      running = false;
+    }
+    if (painis->y <= -painis->h){
+      running = false;
+    }
+
+    for (auto& pair: pipes){
+      Sprite* top = pair.first;
+      Sprite* bot = pair.second;
+
+      top->x -= 3.f;
+      bot->x -= 3.f;
+
+      if (top->x <= -top->w){
+	float maxX = 0;
+	for (const auto& p: pipes){
+	  if (p.first->x > maxX){
+	    maxX = p.first->x;
+	  }
+	}
+
+	top->x = maxX + pipeGapX;
+	bot->x = top->x;
+
+	top->y = -(wHeight * 0.25f + fmod(rand(), wHeight * 0.5f));
+	bot->y = top->y + top->h + pipeGapY;
+      }
+
+      if (collision(painis, top) || collision(painis, bot)){
+	running = false;
+      }
+    }
+    // if (collision(painis, rect)){
+    //   running = false;
+    // }
+    // if (collision(painis, rect2)){
+    //   running = false;
+    // }
+
+    
     scene.cleanup();
     scene.updateGlobalBuffers(vertices, indices);
 
@@ -195,7 +268,7 @@ int main(int argc, char **argv) {
 
     SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
 
-    Mat4 matrix = Mat4::translate(wWidth / 2.f, wHeight / 2.f, 0.f);
+    Mat4 matrix = Mat4::translate(0.f, 0.f, 0.f);
     Mat4 finalMPV = projection * matrix;
     SDL_PushGPUVertexUniformData(commandBuffer, 0, &finalMPV, sizeof(Mat4));
 
@@ -207,8 +280,6 @@ int main(int argc, char **argv) {
     SDL_EndGPURenderPass(renderPass);
 
     SDL_SubmitGPUCommandBuffer(commandBuffer);
-
-    rotation++;
 
   }
 
