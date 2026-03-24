@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
   const float pipeWidth = 45.f;
   const float pipeGapY = painis->h * 3;
-  const float pipeGapX = painis->w * 5;
+  const float pipeGapX = painis->w * 7;
 
   int pipePairsCount = (wWidth / pipeGapX) + 2;
 
