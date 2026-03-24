@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
       }
 
       if ((collision(painis, top) || collision(painis, bot)) || (painis->y >= wHeight || painis->y <= -painis->h)){
-	// running = false;
+	score = 0;
 
 	SDL_PutAudioStreamData(sounds[3].stream, sounds[3].wavData, (int)sounds[3].wavDataLen);
 	
