@@ -1,7 +1,6 @@
 .xmake
 .ccls-cache
 .ccls*
-build
 
 # Prerequisites
 *.d

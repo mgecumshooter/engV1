@@ -11,11 +11,11 @@ target("stoopid2")
 	set_optimize("fastest")
 
     after_build(function (target)
-    	local shd_dir = path.join(os.projectdir(), "shaders")
-	local res_dir = path.join(os.projectdir(), "resources")
-	local out_dir = target:targetdir()
-	os.cp(shd_dir, out_dir)
-	os.cp(res_dir, out_dir)
+		local shd_dir = path.join(os.projectdir(), "shaders")
+		local res_dir = path.join(os.projectdir(), "resources")
+		local out_dir = target:targetdir()
+		os.cp(shd_dir, out_dir)
+		os.cp(res_dir, out_dir)
     end)
 
 --
