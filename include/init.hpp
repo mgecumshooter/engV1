@@ -1,10 +1,12 @@
 #pragma once
+#include <iostream>
 #include <vector>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
-#include "basicRender.hpp"
 #include "matrix.hpp"
+#include "vertex.hpp"
+#include "loaders.hpp"
 
 
 int wHeight = 600;
@@ -33,7 +35,11 @@ SDL_GPUTransferBuffer* transferBuffer;
 
 SDL_GPUGraphicsPipeline* graphicsPipeline;
 
-void init(){
+SDL_GPUSampler* textureSampler;
+
+SDL_GPUTexture* nullTexture;
+
+void init() {
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
   window = SDL_CreateWindow("painis", wWidth, wHeight, SDL_WINDOW_VULKAN);
@@ -84,10 +90,10 @@ void init(){
   fragmentInfo.entrypoint = "main";
   fragmentInfo.format = SDL_GPU_SHADERFORMAT_SPIRV;
   fragmentInfo.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
-  fragmentInfo.num_samplers = 0;
+  fragmentInfo.num_samplers = 1;
   fragmentInfo.num_storage_buffers = 0;
   fragmentInfo.num_storage_textures = 0;
-  fragmentInfo.num_uniform_buffers = 0;
+  fragmentInfo.num_uniform_buffers = 1;
 
   SDL_GPUShader* fragmentShader = SDL_CreateGPUShader(device, &fragmentInfo);
 
@@ -111,18 +117,27 @@ void init(){
   pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
   pipelineInfo.vertex_input_state.vertex_buffer_descriptions = vertexBufferDescriptions;
 
-  SDL_GPUVertexAttribute vertexAttributes[2];
+  SDL_GPUVertexAttribute vertexAttributes[3];
+  // position 
   vertexAttributes[0].buffer_slot = 0;
   vertexAttributes[0].location = 0;
   vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
   vertexAttributes[0].offset = 0;
 
+  // color
   vertexAttributes[1].buffer_slot = 0;
   vertexAttributes[1].location = 1;
   vertexAttributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;
   vertexAttributes[1].offset = sizeof(float) * 3;
 
-  pipelineInfo.vertex_input_state.num_vertex_attributes = 2;
+  // uv
+  vertexAttributes[2].buffer_slot = 0;
+  vertexAttributes[2].location = 2;
+  vertexAttributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+  vertexAttributes[2].offset = sizeof(float) * 3 + sizeof(float) * 4;
+
+  pipelineInfo.vertex_input_state.num_vertex_attributes = 3;
+  pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
   pipelineInfo.vertex_input_state.vertex_attributes = vertexAttributes;
 
 
@@ -133,7 +148,16 @@ void init(){
   pipelineInfo.target_info.num_color_targets = 1;
   pipelineInfo.target_info.color_target_descriptions = colorTargetDescriptions;
 
+  // sampler
+  SDL_GPUSamplerCreateInfo sampler_info{};
+  sampler_info.min_filter = SDL_GPU_FILTER_LINEAR;
+  sampler_info.mag_filter = SDL_GPU_FILTER_LINEAR;
+  sampler_info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
+  sampler_info.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+  sampler_info.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
 
+  textureSampler = SDL_CreateGPUSampler(device, &sampler_info);
+  nullTexture = Loader::load_texture(device, "resources/textures/null_tex.png");
   graphicsPipeline = SDL_CreateGPUGraphicsPipeline(device, &pipelineInfo);
 
   SDL_ReleaseGPUShader(device, vertexShader);

@@ -1,0 +1,5 @@
+{
+	"build": "lua build_shaders.lua",
+	"run": "xmake run",
+	"clearOnBuild": "false"
+}
